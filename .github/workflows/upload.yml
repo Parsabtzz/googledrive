@@ -1,0 +1,26 @@
+name: Upload to Drive
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Create credentials file
+      run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > service_account.json
+
+    - name: Run uploader
+      run: python upload.py
