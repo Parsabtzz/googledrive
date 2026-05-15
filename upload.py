@@ -1,6 +1,9 @@
 import os
 import pickle
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -21,7 +24,14 @@ filename = DOWNLOAD_URL.split("/")[-1]
 
 print("Downloading:", DOWNLOAD_URL)
 
-response = requests.get(DOWNLOAD_URL, stream=True)
+response = requests.get(
+    DOWNLOAD_URL,
+    stream=True,
+    verify=False,
+    headers={
+        "User-Agent": "Mozilla/5.0"
+    }
+)
 
 with open(filename, "wb") as file:
     for chunk in response.iter_content(chunk_size=1024 * 1024):
