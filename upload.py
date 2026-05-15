@@ -18,37 +18,56 @@ if not DOWNLOAD_URL:
     raise Exception("FILE_URL not found")
 
 filename = DOWNLOAD_URL.split("/")[-1]
+temp_filename = filename + ".part"
 
 print("Downloading:", DOWNLOAD_URL)
 
-response = requests.get(
-    DOWNLOAD_URL,
-    stream=True,
-    verify=False,
-    headers={"User-Agent": "Mozilla/5.0"},
-    timeout=60
-)
+# =======================
+# 🔥 DOWNLOAD SAFE VERSION
+# =======================
+try:
+    response = requests.get(
+        DOWNLOAD_URL,
+        stream=True,
+        verify=False,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=60
+    )
 
-# ⭐ مهم: چک وضعیت
-response.raise_for_status()
+    response.raise_for_status()
 
-# ⭐ دانلود امن
-temp_filename = filename + ".part"
+    total = int(response.headers.get("Content-Length", 0))
+    downloaded = 0
 
-with open(temp_filename, "wb") as file:
-    for chunk in response.iter_content(chunk_size=1024 * 1024):
-        if chunk:
-            file.write(chunk)
+    with open(temp_filename, "wb") as file:
+        for chunk in response.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                file.write(chunk)
+                downloaded += len(chunk)
+                print(f"{downloaded}/{total}")
 
-# ⭐ بررسی سایز
-if os.path.getsize(temp_filename) == 0:
-    raise Exception("Downloaded file is empty!")
+    # اگر فایل خالی بود
+    if os.path.getsize(temp_filename) == 0:
+        raise Exception("Downloaded file is empty!")
 
-os.rename(temp_filename, filename)
+    # اگر سایز mismatch بود
+    if total != 0 and os.path.getsize(temp_filename) != total:
+        raise Exception("Download incomplete (file corrupted)")
 
-print("Download complete")
+    # rename فقط وقتی کامل شد
+    os.rename(temp_filename, filename)
 
-# ---------- Google Drive ----------
+    print("Download complete")
+
+except Exception as e:
+    print("Download failed:", e)
+    if os.path.exists(temp_filename):
+        os.remove(temp_filename)
+    raise
+
+# =======================
+# 🔥 GOOGLE DRIVE UPLOAD
+# =======================
 creds = None
 
 if os.path.exists('token.pickle'):
