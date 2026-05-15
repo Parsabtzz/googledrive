@@ -1,26 +1,33 @@
-name: Upload to Drive
+name: Upload URL to Drive
 
 on:
   workflow_dispatch:
+    inputs:
+      file_url:
+        description: "Direct File URL"
+        required: true
 
 jobs:
   upload:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      - name: Install packages
+        run: pip install -r requirements.txt
 
-    - name: Create credentials file
-      run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > service_account.json
+      - name: Restore token
+        run: |
+          echo "${{ secrets.GOOGLE_TOKEN }}" | base64 -d > token.pickle
 
-    - name: Run uploader
-      run: python upload.py
+      - name: Run uploader
+        env:
+          FILE_URL: ${{ github.event.inputs.file_url }}
+        run: python upload.py
